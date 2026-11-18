@@ -1,0 +1,11 @@
+CREATE DATABASE IF NOT EXISTS monitoramento_processos;
+
+USE monitoramento_processos;
+
+CREATE TABLE IF NOT EXISTS processos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(150) NOT NULL,
+    tipo VARCHAR(50) NOT NULL,
+    setor VARCHAR(120) NOT NULL,
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

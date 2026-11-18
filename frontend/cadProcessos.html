@@ -1,0 +1,458 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Monitoramento de Processos</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #f4f5fa;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: auto;
+        }
+
+        .voltar {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #764ba2;
+            text-decoration: none;
+        }
+
+        .cabecalho {
+            margin-bottom: 25px;
+        }
+
+        .cabecalho h1 {
+            color: #333;
+            font-size: 30px;
+        }
+
+        .cabecalho p {
+            color: #777;
+            margin-top: 10px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.07);
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #444;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #764ba2;
+        }
+
+        button {
+            padding: 13px 20px;
+            background: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        button:hover {
+            background: #5b3785;
+        }
+
+        .botao-excluir {
+            background: #dc3545;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .botao-excluir:hover {
+            background: #b52a37;
+        }
+
+        .processo {
+            background: #f8f6fb;
+            padding: 18px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #764ba2;
+        }
+
+        .processo-topo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .processo h3 {
+            color: #333;
+            font-size: 16px;
+        }
+
+        .processo p {
+            color: #666;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .vazio {
+            color: #888;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .contador {
+            color: #764ba2;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .mensagem {
+            margin-bottom: 15px;
+            color: #764ba2;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <a class="voltar" href="/">← Voltar ao login</a>
+
+    <div class="cabecalho">
+        <h1>Processos</h1>
+        <p>Insira abaixo os processos que deseja monitorar.</p>
+    </div>
+
+    <div class="card">
+
+        <h2>Cadastrar processo</h2>
+
+        <div id="mensagem" class="mensagem"></div>
+
+        <form id="formProcesso">
+
+            <label for="nome">Nome do processo</label>
+
+            <input
+                type="text"
+                id="nome"
+                list="sugestoes"
+                placeholder="Digite ou selecione um processo"
+                required
+            >
+
+            <datalist id="sugestoes">
+                <option value="Gestão de stakeholders">
+                <option value="Planejamento e aprovação de eventos">
+                <option value="Gestão de contratos e fornecedores">
+                <option value="Inventário, aquisições e logística">
+                <option value="Gestão financeira e tesouraria">
+                <option value="Prestação de contas de eventos">
+                <option value="Monitoramento operacional">
+                <option value="Avaliação de impacto e NPS">
+                <option value="Gestão de riscos e ocorrências">
+                <option value="Governança de dados e indicadores">
+            </datalist>
+
+            <label for="tipo">Tipo</label>
+
+            <select id="tipo" required>
+                <option value="">Selecione o tipo</option>
+                <option value="Rastreabilidade">Rastreabilidade</option>
+                <option value="Desempenho">Desempenho</option>
+            </select>
+
+            <label for="setor">Setor responsável</label>
+
+            <input
+                type="text"
+                id="setor"
+                placeholder="Digite o setor responsável"
+                required
+            >
+
+            <button type="submit">Cadastrar processo</button>
+
+        </form>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Processos cadastrados</h2>
+
+        <div class="contador" id="contador">
+            0 processos cadastrados
+        </div>
+
+        <div id="lista"></div>
+
+    </div>
+
+</div>
+
+<script>
+
+    const API = "/api/processos";
+
+    const formulario = document.getElementById("formProcesso");
+    const lista = document.getElementById("lista");
+    const contador = document.getElementById("contador");
+    const mensagem = document.getElementById("mensagem");
+
+    // Sugestões automáticas
+    const sugestoes = {
+        "Gestão de stakeholders": {
+            tipo: "Rastreabilidade",
+            setor: "Gestão de Projetos"
+        },
+
+        "Planejamento e aprovação de eventos": {
+            tipo: "Desempenho",
+            setor: "Planejamento"
+        },
+
+        "Gestão de contratos e fornecedores": {
+            tipo: "Rastreabilidade",
+            setor: "Administrativo"
+        },
+
+        "Inventário, aquisições e logística": {
+            tipo: "Rastreabilidade",
+            setor: "Logística"
+        },
+
+        "Gestão financeira e tesouraria": {
+            tipo: "Rastreabilidade",
+            setor: "Financeiro"
+        },
+
+        "Prestação de contas de eventos": {
+            tipo: "Rastreabilidade",
+            setor: "Financeiro"
+        },
+
+        "Monitoramento operacional": {
+            tipo: "Desempenho",
+            setor: "Operações"
+        },
+
+        "Avaliação de impacto e NPS": {
+            tipo: "Desempenho",
+            setor: "Avaliação"
+        },
+
+        "Gestão de riscos e ocorrências": {
+            tipo: "Rastreabilidade",
+            setor: "Operações"
+        },
+
+        "Governança de dados e indicadores": {
+            tipo: "Desempenho",
+            setor: "Governança de TI"
+        }
+    };
+
+    // Preenchimento automático
+    document.getElementById("nome")
+        .addEventListener("input", function() {
+
+            const processo = sugestoes[this.value];
+
+            if (processo) {
+                document.getElementById("tipo").value = processo.tipo;
+                document.getElementById("setor").value = processo.setor;
+            }
+
+        });
+
+    // Consultar processos
+    async function carregarProcessos() {
+
+        try {
+
+            const resposta = await fetch(API);
+
+            if (!resposta.ok) {
+                throw new Error("Erro ao consultar processos.");
+            }
+
+            const processos = await resposta.json();
+
+            lista.innerHTML = "";
+
+            contador.textContent =
+                processos.length + " processos cadastrados";
+
+            if (processos.length === 0) {
+
+                lista.innerHTML =
+                    '<p class="vazio">Nenhum processo cadastrado.</p>';
+
+                return;
+            }
+
+            processos.forEach(processo => {
+
+                const card = document.createElement("div");
+                card.className = "processo";
+
+                const topo = document.createElement("div");
+                topo.className = "processo-topo";
+
+                const titulo = document.createElement("h3");
+                titulo.textContent = processo.nome;
+
+                const excluir = document.createElement("button");
+                excluir.className = "botao-excluir";
+                excluir.textContent = "Excluir";
+
+                excluir.addEventListener("click", function() {
+                    excluirProcesso(processo.id);
+                });
+
+                const tipo = document.createElement("p");
+                tipo.textContent = "Tipo: " + processo.tipo;
+
+                const setor = document.createElement("p");
+                setor.textContent =
+                    "Setor responsável: " + processo.setor;
+
+                topo.append(titulo, excluir);
+                card.append(topo, tipo, setor);
+
+                lista.appendChild(card);
+
+            });
+
+        } catch (erro) {
+
+            mensagem.textContent =
+                "Não foi possível carregar os processos. Verifique a API.";
+
+        }
+
+    }
+
+    // Cadastrar processo
+    formulario.addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        const processo = {
+            nome: document.getElementById("nome").value.trim(),
+            tipo: document.getElementById("tipo").value,
+            setor: document.getElementById("setor").value.trim()
+        };
+
+        try {
+
+            const resposta = await fetch(API, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify(processo)
+            });
+
+            const resultado = await resposta.json();
+
+            if (!resposta.ok) {
+                throw new Error(resultado.erro || "Erro no cadastro.");
+            }
+
+            formulario.reset();
+
+            mensagem.textContent =
+                "Processo cadastrado com sucesso!";
+
+            await carregarProcessos();
+
+        } catch (erro) {
+
+            mensagem.textContent = erro.message;
+
+        }
+
+    });
+
+    // Excluir processo
+    async function excluirProcesso(id) {
+
+        if (!confirm("Deseja realmente excluir este processo?")) {
+            return;
+        }
+
+        try {
+
+            const resposta = await fetch(`${API}/${id}`, {
+                method: "DELETE"
+            });
+
+            if (!resposta.ok) {
+                throw new Error("Não foi possível excluir o processo.");
+            }
+
+            mensagem.textContent =
+                "Processo excluído com sucesso!";
+
+            await carregarProcessos();
+
+        } catch (erro) {
+
+            mensagem.textContent = erro.message;
+
+        }
+
+    }
+
+    // Inicializar tela
+    carregarProcessos();
+
+</script>
+
+</body>
+</html>
