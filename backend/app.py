@@ -142,6 +142,58 @@ def excluir_processo(id):
             cursor.close()
         conexao.close()
 
+@app.route("/api/processos/<int:id>", methods=["PUT"])
+def editar_processo(id):
+    dados = request.get_json(silent=True)
 
+    if not dados:
+        return jsonify({"erro": "Dados não enviados"}), 400
+
+    nome = dados.get("nome", "").strip()
+    tipo = dados.get("tipo", "").strip()
+    setor = dados.get("setor", "").strip()
+
+    if not nome or not tipo or not setor:
+        return jsonify({"erro": "Preencha todos os campos"}), 400
+
+    conexao = conectar()
+
+    if conexao is None:
+        return jsonify({"erro": "Não foi possível conectar ao banco de dados"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexao.cursor()
+
+        cursor.execute("""
+            UPDATE processos
+            SET nome = %s, tipo = %s, setor = %s
+            WHERE id = %s
+        """, (nome, tipo, setor, id))
+
+        if cursor.rowcount == 0:
+            cursor.execute(
+                "SELECT id FROM processos WHERE id = %s",
+                (id,)
+            )
+
+            if cursor.fetchone() is None:
+                return jsonify({"erro": "Processo não encontrado"}), 404
+
+        conexao.commit()
+
+        return jsonify({
+            "mensagem": "Processo atualizado com sucesso"
+        }), 200
+
+    except Exception as erro:
+        conexao.rollback()
+        return jsonify({"erro": str(erro)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexao.close()
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -98,6 +98,22 @@
             background: #5b3785;
         }
 
+        .acoes {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .botao-editar {
+            background: #667eea;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .botao-editar:hover {
+            background: #4f63c7;
+        }
+
         .botao-excluir {
             background: #dc3545;
             padding: 8px 12px;
@@ -149,6 +165,13 @@
         .mensagem {
             margin-bottom: 15px;
             color: #764ba2;
+        }
+
+        @media (max-width: 480px) {
+            .processo-topo {
+                align-items: flex-start;
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -344,6 +367,20 @@
                 const titulo = document.createElement("h3");
                 titulo.textContent = processo.nome;
 
+                // Área dos botões
+                const acoes = document.createElement("div");
+                acoes.className = "acoes";
+
+                // Botão editar
+                const editar = document.createElement("button");
+                editar.className = "botao-editar";
+                editar.textContent = "Editar";
+
+                editar.addEventListener("click", function() {
+                    editarProcesso(processo);
+                });
+
+                // Botão excluir
                 const excluir = document.createElement("button");
                 excluir.className = "botao-excluir";
                 excluir.textContent = "Excluir";
@@ -359,7 +396,8 @@
                 setor.textContent =
                     "Setor responsável: " + processo.setor;
 
-                topo.append(titulo, excluir);
+                acoes.append(editar, excluir);
+                topo.append(titulo, acoes);
                 card.append(topo, tipo, setor);
 
                 lista.appendChild(card);
@@ -385,6 +423,11 @@
             tipo: document.getElementById("tipo").value,
             setor: document.getElementById("setor").value.trim()
         };
+
+        if (!processo.nome || !processo.tipo || !processo.setor) {
+            mensagem.textContent = "Preencha todos os campos.";
+            return;
+        }
 
         try {
 
@@ -419,6 +462,80 @@
 
     });
 
+    // Editar processo
+    async function editarProcesso(processo) {
+
+        const nome = prompt(
+            "Nome do processo:",
+            processo.nome
+        );
+
+        if (nome === null) return;
+
+        const tipo = prompt(
+            "Tipo (Rastreabilidade ou Desempenho):",
+            processo.tipo
+        );
+
+        if (tipo === null) return;
+
+        const setor = prompt(
+            "Setor responsável:",
+            processo.setor
+        );
+
+        if (setor === null) return;
+
+        const dados = {
+            nome: nome.trim(),
+            tipo: tipo.trim(),
+            setor: setor.trim()
+        };
+
+        if (!dados.nome || !dados.tipo || !dados.setor) {
+            mensagem.textContent = "Preencha todos os campos.";
+            return;
+        }
+
+        if (!["Rastreabilidade", "Desempenho"].includes(dados.tipo)) {
+            mensagem.textContent =
+                "Tipo inválido. Informe Rastreabilidade ou Desempenho.";
+            return;
+        }
+
+        try {
+
+            const resposta = await fetch(`${API}/${processo.id}`, {
+                method: "PUT",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify(dados)
+            });
+
+            const resultado = await resposta.json();
+
+            if (!resposta.ok) {
+                throw new Error(
+                    resultado.erro || "Erro ao editar processo."
+                );
+            }
+
+            mensagem.textContent =
+                "Processo atualizado com sucesso!";
+
+            await carregarProcessos();
+
+        } catch (erro) {
+
+            mensagem.textContent = erro.message;
+
+        }
+
+    }
+
     // Excluir processo
     async function excluirProcesso(id) {
 
@@ -432,8 +549,12 @@
                 method: "DELETE"
             });
 
+            const resultado = await resposta.json();
+
             if (!resposta.ok) {
-                throw new Error("Não foi possível excluir o processo.");
+                throw new Error(
+                    resultado.erro || "Não foi possível excluir o processo."
+                );
             }
 
             mensagem.textContent =
