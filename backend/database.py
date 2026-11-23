@@ -7,7 +7,7 @@ def conectar():
     try:
         conexao = mysql.connector.connect(
             host="127.0.0.1",
-            port=3306,
+            port=5000,
             user="root",
             password=os.getenv("DB_PASSWORD"),
             database="monitoramento_processos"
